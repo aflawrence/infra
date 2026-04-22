@@ -1,0 +1,10 @@
+---
+- name: load zfs module
+  community.general.modprobe:
+    name: zfs
+    state: present
+
+- name: rebuild initramfs
+  ansible.builtin.command: dracut -f
+  # ARC limits must be in the initramfs or they apply too late — after ZFS
+  # has already grabbed memory from its default sizing.

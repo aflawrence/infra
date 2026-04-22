@@ -1,0 +1,11 @@
+[Unit]
+Description=forge syncoid replication: {{ item.1.source }} -> {{ item.1.target }}
+Wants=network-online.target
+After=network-online.target zfs.target
+
+[Service]
+Type=oneshot
+Nice=10
+IOSchedulingClass=best-effort
+IOSchedulingPriority=7
+ExecStart=/usr/sbin/syncoid {{ item.1.options | default('--no-sync-snap') }} {{ item.1.source }} {{ item.1.target }}

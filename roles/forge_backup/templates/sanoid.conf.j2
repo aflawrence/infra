@@ -1,0 +1,21 @@
+# Managed by forge_backup — edit group_vars/forge/vars.yml
+#
+# Sanoid templates define snapshot cadence and retention. Datasets reference
+# a template and optionally set recursive=true to cover children.
+
+{% for name, t in forge_backup_sanoid_templates.items() %}
+[template_{{ name }}]
+{% for k, v in t.items() %}
+{{ k }} = {{ v | lower if v is boolean else v }}
+{% endfor %}
+
+{% endfor %}
+
+{% for ds in forge_backup_sanoid_datasets %}
+[{{ ds.dataset }}]
+use_template = {{ ds.template }}
+{% if ds.recursive | default(false) %}
+recursive = yes
+{% endif %}
+
+{% endfor %}

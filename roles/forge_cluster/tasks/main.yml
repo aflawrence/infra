@@ -1,0 +1,155 @@
+---
+- name: Skip cluster setup if disabled
+  ansible.builtin.meta: end_play
+  when: not forge_cluster_enabled
+
+- name: Install pacemaker/corosync stack on every node
+  ansible.builtin.dnf:
+    name: "{{ forge_cluster_packages }}"
+    state: present
+  delegate_to: "{{ item }}"
+  loop: "{{ groups['forge'] }}"
+  run_once: true
+
+- name: Ensure pcsd is enabled on every node
+  ansible.builtin.systemd:
+    name: pcsd
+    enabled: true
+    state: started
+  delegate_to: "{{ item }}"
+  loop: "{{ groups['forge'] }}"
+  run_once: true
+
+- name: Open cluster firewall ports on every node
+  ansible.posix.firewalld:
+    service: high-availability    # opens corosync 5404/5405, pcsd 2224
+    zone: trusted
+    permanent: true
+    immediate: true
+    state: enabled
+  delegate_to: "{{ item }}"
+  loop: "{{ groups['forge'] }}"
+  run_once: true
+
+- name: Set the hacluster password (needed for pcs auth between nodes)
+  ansible.builtin.user:
+    name: hacluster
+    password: "{{ forge_cluster_hacluster_password | password_hash('sha512') }}"
+    update_password: always
+  delegate_to: "{{ item }}"
+  loop: "{{ groups['forge'] }}"
+  run_once: true
+  no_log: true
+
+- name: Check cluster auth state
+  ansible.builtin.command: pcs cluster status
+  register: _cluster_status
+  changed_when: false
+  failed_when: false
+
+- name: Authenticate pcs across all nodes (one-shot)
+  ansible.builtin.command: >
+    pcs host auth {{ groups['forge'] | join(' ') }}
+    -u hacluster -p {{ forge_cluster_hacluster_password }}
+  when: _cluster_status.rc != 0
+  no_log: true
+  changed_when: true
+
+- name: Create the cluster (one-shot)
+  ansible.builtin.command: >
+    pcs cluster setup {{ forge_cluster_name }}
+    {% for h in groups['forge'] %}
+    {{ h }} addr={{ hostvars[h].ansible_host | default(h) }}
+    {% endfor %}
+    transport {{ forge_cluster_transport }}
+    {{ '--enable --start' if _cluster_status.rc != 0 else '' }}
+  when: _cluster_status.rc != 0
+  changed_when: true
+
+- name: Enable + start the cluster on all nodes
+  ansible.builtin.command: pcs cluster enable --all
+  changed_when: false
+  failed_when: false
+
+- name: Start the cluster on all nodes
+  ansible.builtin.command: pcs cluster start --all
+  changed_when: false
+  failed_when: false
+
+- name: Configure two-node quorum if requested
+  ansible.builtin.command: pcs quorum update two_node=1
+  when: forge_cluster_two_node
+  changed_when: false
+  failed_when: false
+
+# ---------------------------------------------------------------------------
+# Fencing — a Pacemaker cluster without fencing will happily split-brain.
+# ---------------------------------------------------------------------------
+- name: Configure SBD fencing
+  when: forge_cluster_fence_method == "sbd"
+  block:
+    - name: Fail if SBD device is empty
+      ansible.builtin.assert:
+        that:
+          - forge_cluster_sbd_device | length > 0
+        fail_msg: "forge_cluster_sbd_device must point to a shared block device (e.g. /dev/disk/by-id/scsi-XYZ)."
+
+    - name: Initialize the SBD device (destructive — runs once)
+      ansible.builtin.command: "sbd -d {{ forge_cluster_sbd_device }} create"
+      register: _sbd_create
+      changed_when: "'Writing' in _sbd_create.stdout"
+      failed_when: _sbd_create.rc not in [0]
+
+    - name: Enable SBD service on all nodes
+      ansible.builtin.systemd:
+        name: sbd
+        enabled: true
+      delegate_to: "{{ item }}"
+      loop: "{{ groups['forge'] }}"
+      run_once: true
+
+    - name: Register the stonith:fence_sbd resource
+      ansible.builtin.command: >
+        pcs stonith create sbd-fence fence_sbd
+        devices={{ forge_cluster_sbd_device }}
+      register: _sbd_resource
+      changed_when: "'already exists' not in _sbd_resource.stderr"
+      failed_when:
+        - _sbd_resource.rc != 0
+        - "'already exists' not in _sbd_resource.stderr"
+
+- name: Warn on disabled fencing
+  ansible.builtin.debug:
+    msg: >
+      Fencing is disabled (forge_cluster_fence_method=none).
+      Pacemaker will log "STONITH is disabled" and a split-brain is likely
+      in any real failure scenario. OK for lab only.
+  when: forge_cluster_fence_method == "none"
+
+- name: Disable stonith when requested (lab only)
+  ansible.builtin.command: pcs property set stonith-enabled=false
+  when: forge_cluster_fence_method == "none"
+  changed_when: false
+
+# ---------------------------------------------------------------------------
+# libvirt live migration — SSH-based, uses the cluster network
+# ---------------------------------------------------------------------------
+- name: Enable libvirt TLS listener on every node
+  ansible.builtin.lineinfile:
+    path: /etc/libvirt/libvirtd.conf
+    regexp: "^#?\\s*listen_tls\\s*="
+    line: "listen_tls = 0"
+  delegate_to: "{{ item }}"
+  loop: "{{ groups['forge'] }}"
+  run_once: true
+
+- name: Configure libvirt for SSH-tunneled migration
+  ansible.builtin.blockinfile:
+    path: /etc/libvirt/libvirtd.conf
+    marker: "# {mark} ANSIBLE MANAGED — forge migration"
+    block: |
+      # Migration uses SSH by default; no need to open libvirt's TCP listener.
+      # cockpit-machines drives virsh migrate under the hood.
+  delegate_to: "{{ item }}"
+  loop: "{{ groups['forge'] }}"
+  run_once: true

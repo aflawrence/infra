@@ -1,0 +1,39 @@
+---
+- name: Install Cockpit and selected modules
+  ansible.builtin.dnf:
+    name: "{{ forge_cockpit_modules }}"
+    state: present
+
+- name: Ensure /etc/cockpit exists
+  ansible.builtin.file:
+    path: /etc/cockpit
+    state: directory
+    mode: "0755"
+
+- name: Enable cockpit.socket
+  ansible.builtin.systemd:
+    name: cockpit.socket
+    enabled: true
+    state: started
+
+- name: Open cockpit in firewalld
+  ansible.posix.firewalld:
+    service: cockpit
+    zone: "{{ item }}"
+    permanent: true
+    immediate: true
+    state: enabled
+  loop:
+    - public
+    - trusted
+  # The trusted zone is bound to forge_mgmt_cidr by forge_base. Listing public
+  # too keeps Cockpit reachable on default-zone interfaces without surprising
+  # operators who ssh in from outside the mgmt CIDR.
+
+- name: Allow Cockpit live-migration port range (used by cockpit-machines)
+  ansible.posix.firewalld:
+    port: "49152-49215/tcp"
+    zone: trusted
+    permanent: true
+    immediate: true
+    state: enabled

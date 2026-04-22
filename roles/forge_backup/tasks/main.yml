@@ -1,0 +1,114 @@
+---
+- name: Install sanoid + helpers
+  ansible.builtin.dnf:
+    name: "{{ forge_backup_packages }}"
+    state: present
+  # sanoid is packaged for Fedora; if your release is missing it, enable the
+  # jdoss/sanoid copr: `dnf copr enable jdoss/sanoid`.
+
+- name: Ensure /etc/sanoid exists
+  ansible.builtin.file:
+    path: /etc/sanoid
+    state: directory
+    mode: "0755"
+
+- name: Render sanoid.conf
+  ansible.builtin.template:
+    src: sanoid.conf.j2
+    dest: /etc/sanoid/sanoid.conf
+    owner: root
+    group: root
+    mode: "0644"
+  notify: restart sanoid timer
+
+- name: Enable sanoid timer (runs hourly, prunes per template)
+  ansible.builtin.systemd:
+    name: sanoid.timer
+    enabled: true
+    state: started
+
+# ---------------------------------------------------------------------------
+# Syncoid jobs — zfs send|recv replication, driven by systemd timers so they
+# show up in cockpit-scheduler.
+# ---------------------------------------------------------------------------
+- name: Render syncoid systemd units
+  ansible.builtin.template:
+    src: "{{ item.0 }}.j2"
+    dest: "/etc/systemd/system/syncoid-{{ item.1.source | replace('/', '-') }}.{{ item.0.split('.')[-1] }}"
+    mode: "0644"
+  loop: "{{ ['syncoid.service', 'syncoid.timer'] | product(forge_backup_syncoid_jobs) | list }}"
+  loop_control:
+    label: "{{ item.0 }} for {{ item.1.source }}"
+  when: forge_backup_syncoid_jobs | length > 0
+  notify: daemon-reload
+
+- name: Flush handlers before enabling timers
+  ansible.builtin.meta: flush_handlers
+
+- name: Enable syncoid timers
+  ansible.builtin.systemd:
+    name: "syncoid-{{ item.source | replace('/', '-') }}.timer"
+    enabled: true
+    state: started
+  loop: "{{ forge_backup_syncoid_jobs }}"
+  when: forge_backup_syncoid_jobs | length > 0
+
+# ---------------------------------------------------------------------------
+# Restic — optional off-site, encrypted, deduplicated object-storage backup.
+# Serves the "backup to remote target" half that PBS also provides.
+# ---------------------------------------------------------------------------
+- name: Restic
+  when: forge_backup_restic_enabled
+  block:
+    - name: Install restic
+      ansible.builtin.dnf:
+        name: restic
+        state: present
+
+    - name: Ensure /etc/forge/restic dir
+      ansible.builtin.file:
+        path: /etc/forge/restic
+        state: directory
+        mode: "0700"
+
+    - name: Write restic environment file
+      ansible.builtin.template:
+        src: restic.env.j2
+        dest: /etc/forge/restic/env
+        mode: "0600"
+      no_log: true
+
+    - name: Install restic backup script
+      ansible.builtin.template:
+        src: restic-backup.sh.j2
+        dest: /usr/local/sbin/forge-restic-backup
+        mode: "0750"
+
+    - name: Install restic systemd unit + timer
+      ansible.builtin.template:
+        src: "{{ item }}.j2"
+        dest: "/etc/systemd/system/{{ item }}"
+        mode: "0644"
+      loop:
+        - forge-restic.service
+        - forge-restic.timer
+      notify: daemon-reload
+
+    - name: Flush handlers so timer registration sees the new units
+      ansible.builtin.meta: flush_handlers
+
+    - name: Enable restic timer
+      ansible.builtin.systemd:
+        name: forge-restic.timer
+        enabled: true
+        state: started
+
+    - name: Initialize the restic repo if missing
+      ansible.builtin.command: restic init
+      environment: "{{ forge_backup_restic_env | combine({'RESTIC_REPOSITORY': forge_backup_restic_repo, 'RESTIC_PASSWORD': forge_backup_restic_password}) }}"
+      register: _restic_init
+      changed_when: "'created restic repository' in _restic_init.stdout"
+      failed_when:
+        - _restic_init.rc != 0
+        - "'already initialized' not in (_restic_init.stderr | default(''))"
+      no_log: true

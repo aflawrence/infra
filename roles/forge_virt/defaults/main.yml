@@ -1,0 +1,26 @@
+---
+forge_virt_packages:
+  - "@virtualization"
+  - libvirt-daemon-kvm
+  - libvirt-client
+  - qemu-kvm
+  - qemu-img
+  - virt-install
+  - virt-top
+  - guestfs-tools
+  - libguestfs-tools
+  - libosinfo
+  - swtpm
+  - edk2-ovmf           # UEFI firmware for guests
+  - python3-libvirt
+  - python3-lxml        # required by the ansible libvirt modules
+
+forge_virt_services:
+  - libvirtd.service
+  - virtlogd.socket
+  - virtlockd.socket
+
+forge_libvirt_pools: []
+forge_libvirt_cpu_mode: host-passthrough
+forge_vm_bridge: br0
+forge_vm_bridge_interface: ""

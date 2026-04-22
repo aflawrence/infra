@@ -1,0 +1,14 @@
+# Example inventory for the forge (Fedora hypervisor) playbook.
+#
+# Copy to `hosts_forge` and adapt. Hostnames must resolve between nodes
+# (either via DNS or /etc/hosts) — Corosync uses them for ring membership.
+
+[forge]
+forge01 ansible_host=10.0.10.11
+forge02 ansible_host=10.0.10.12
+forge03 ansible_host=10.0.10.13
+
+# The primary node runs the one-shot cluster bootstrap tasks (pcs cluster setup,
+# fence agent configuration, etc.). Everything else is idempotent across nodes.
+[forge_primary]
+forge01

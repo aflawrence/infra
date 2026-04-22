@@ -1,0 +1,104 @@
+---
+- name: Check if the OpenZFS release package is already installed
+  ansible.builtin.command: rpm -q zfs-release
+  register: _zfs_release
+  changed_when: false
+  failed_when: false
+
+- name: Install OpenZFS release RPM (adds the zfsonlinux repo + GPG key)
+  ansible.builtin.dnf:
+    name: "{{ forge_zfs_repo_rpm }}"
+    state: present
+    disable_gpg_check: true  # release RPM signs subsequent packages; see docs
+  when: _zfs_release.rc != 0
+
+- name: Pin kmod vs dkms variant
+  ansible.builtin.copy:
+    dest: /etc/dnf/protected.d/zfs.conf
+    mode: "0644"
+    content: |
+      # managed by forge_zfs — prevents accidental cross-variant swaps
+      zfs
+  # This is advisory; the actual variant is selected by installing the
+  # matching kmod/dkms package group below.
+
+- name: Install kernel headers (required by both kmod and dkms)
+  ansible.builtin.dnf:
+    name:
+      - kernel-devel
+      - kernel-headers
+    state: present
+
+- name: Install OpenZFS ({{ forge_zfs_package_variant }})
+  ansible.builtin.dnf:
+    name: "{{ forge_zfs_packages + (['zfs-dkms'] if forge_zfs_package_variant == 'dkms' else []) }}"
+    state: present
+
+- name: Ensure the zfs module loads at boot
+  ansible.builtin.copy:
+    dest: /etc/modules-load.d/zfs.conf
+    mode: "0644"
+    content: "zfs\n"
+  notify: load zfs module
+
+- name: Configure ARC max
+  ansible.builtin.copy:
+    dest: /etc/modprobe.d/zfs.conf
+    mode: "0644"
+    content: |
+      # Managed by forge_zfs
+      options zfs zfs_arc_max={{ forge_zfs_arc_max }}
+  when: forge_zfs_arc_max | int > 0
+  notify: rebuild initramfs
+
+- name: Enable core ZFS services
+  ansible.builtin.systemd:
+    name: "{{ item }}"
+    enabled: true
+  loop: "{{ forge_zfs_services }}"
+  # We don't start here — the import services activate on their own after
+  # pools exist. Starting zed early on a fresh box is harmless but noisy.
+
+- name: Gather existing zpools
+  ansible.builtin.command: zpool list -H -o name
+  register: _existing_pools
+  changed_when: false
+  failed_when: false
+  check_mode: false
+
+- name: Create declared zpools
+  ansible.builtin.command: >
+    zpool create -f
+    {% for opt, val in (item.options | default({})).items() %}
+    -o {{ opt }}={{ val }}
+    {% endfor %}
+    {% for prop, val in (item.properties | default({})).items() %}
+    -O {{ prop }}={{ val }}
+    {% endfor %}
+    {{ item.name }}
+    {% for vdev in item.vdevs %}
+    {{ vdev.type }} {{ vdev.disks | join(' ') }}
+    {% endfor %}
+  loop: "{{ forge_zfs_pools }}"
+  when: item.name not in (_existing_pools.stdout_lines | default([]))
+  # Destructive: only runs when the pool doesn't exist. Declared disks must be
+  # clean (wipefs first). We prefer /dev/disk/by-id paths for stable naming.
+
+- name: Gather existing datasets
+  ansible.builtin.command: zfs list -H -o name
+  register: _existing_datasets
+  changed_when: false
+  failed_when: false
+  check_mode: false
+  when: forge_zfs_datasets | length > 0
+
+- name: Create declared datasets
+  community.general.zfs:
+    name: "{{ item.name }}"
+    state: present
+    extra_zfs_properties: "{{ item.properties | default({}) }}"
+  loop: "{{ forge_zfs_datasets }}"
+  when:
+    - forge_zfs_datasets | length > 0
+    - _existing_pools.stdout_lines is defined
+    - (item.name.split('/')[0]) in _existing_pools.stdout_lines

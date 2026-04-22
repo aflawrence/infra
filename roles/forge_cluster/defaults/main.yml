@@ -1,0 +1,21 @@
+---
+forge_cluster_enabled: true
+forge_cluster_name: forge
+forge_cluster_transport: knet
+
+forge_cluster_packages:
+  - pacemaker
+  - pcs
+  - fence-agents-all
+  - corosync
+  - resource-agents
+  - sbd
+
+forge_cluster_services:
+  - pcsd.service
+
+forge_cluster_fence_method: sbd     # sbd | ipmi | none
+forge_cluster_sbd_device: ""
+
+# qdisk-style 2-node protection. For 3+ nodes leave at false.
+forge_cluster_two_node: false

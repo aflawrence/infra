@@ -1,0 +1,157 @@
+---
+# =============================================================================
+# forge — group-level variables
+# =============================================================================
+# Every role reads from here. Override per-host in host_vars/<name>/vars.yml.
+# Secrets (cluster auth passwords, restic repo keys) belong in an
+# ansible-vault encrypted secret.yml next to this file.
+# =============================================================================
+
+# ---------------------------------------------------------------------------
+# Identity
+# ---------------------------------------------------------------------------
+forge_cluster_name: forge
+forge_admin_user: forge
+forge_admin_ssh_keys: []       # list of authorized_keys lines
+
+# ---------------------------------------------------------------------------
+# Networking — used by firewalld zones and Cockpit
+# ---------------------------------------------------------------------------
+forge_mgmt_cidr: "10.0.10.0/24"       # trusted management network
+forge_cluster_cidr: "10.0.20.0/24"    # corosync + migration traffic (ideally isolated)
+forge_storage_cidr: "10.0.30.0/24"    # optional dedicated storage/replication net
+
+# Bridge that VMs attach to by default. Created by forge_virt via NetworkManager.
+forge_vm_bridge: br0
+forge_vm_bridge_interface: eno1       # physical NIC enslaved to the bridge
+
+# ---------------------------------------------------------------------------
+# ZFS
+# ---------------------------------------------------------------------------
+# Leave forge_zfs_pools empty to install ZFS without touching disks — you can
+# then create pools from the Cockpit UI (houston/cockpit-zfs). Populated here
+# for declarative, repeatable provisioning.
+forge_zfs_pools: []
+#   - name: tank
+#     vdevs:
+#       - type: raidz2
+#         disks: [/dev/disk/by-id/ata-WDC_WUH721816ALE6L4_xxx, ...]
+#     options:
+#       ashift: 12
+#       autotrim: "on"
+#     properties:
+#       compression: lz4
+#       atime: "off"
+#       xattr: sa
+#       acltype: posixacl
+
+# Datasets created after the pool exists. Used by libvirt (VMs), Podman (CTs),
+# and sanoid (snapshot policy).
+forge_zfs_datasets:
+  - { name: "tank/vm",     properties: { recordsize: "64K",  compression: "zstd-3", "com.sun:auto-snapshot": "true" } }
+  - { name: "tank/ct",     properties: { recordsize: "128K", compression: "zstd-3", "com.sun:auto-snapshot": "true" } }
+  - { name: "tank/iso",    properties: { compression: "zstd-3" } }
+  - { name: "tank/backup", properties: { recordsize: "1M",   compression: "zstd-9" } }
+
+# ARC cap (bytes). Default is half of RAM — explicit caps let you reason about
+# guest memory. Set to 0 to let OpenZFS pick.
+forge_zfs_arc_max: 8589934592   # 8 GiB
+
+# ---------------------------------------------------------------------------
+# Cockpit + 45Drives Houston
+# ---------------------------------------------------------------------------
+forge_cockpit_port: 9090
+
+# Core Cockpit modules shipped by Fedora.
+forge_cockpit_modules:
+  - cockpit
+  - cockpit-machines         # KVM/libvirt
+  - cockpit-podman           # containers
+  - cockpit-storaged         # block storage
+  - cockpit-networkmanager
+  - cockpit-packagekit
+  - cockpit-pcp              # performance metrics
+  - cockpit-selinux
+  - cockpit-sosreport
+
+# 45Drives Houston modules. Names match the packages in their repo.
+# https://github.com/45Drives
+forge_houston_modules:
+  - cockpit-zfs-manager      # ZFS pools/datasets/snapshots from the UI
+  - cockpit-file-sharing     # Samba + NFS shares
+  - cockpit-identities       # users / groups / POSIX acls
+  - cockpit-navigator        # file browser
+  - cockpit-benchmark        # fio-based disk/network benchmarks
+  - cockpit-scheduler        # systemd timers from the UI (used by backups)
+
+# ---------------------------------------------------------------------------
+# Virtualization
+# ---------------------------------------------------------------------------
+# libvirt storage pools. The "vm" pool is a ZFS dataset used as a directory
+# pool for qcow2 images (lets us snapshot at the dataset level).
+forge_libvirt_pools:
+  - { name: iso,    path: "/tank/iso",    autostart: true }
+  - { name: vm,     path: "/tank/vm",     autostart: true }
+  - { name: backup, path: "/tank/backup", autostart: true }
+
+# Default CPU model. host-passthrough gives best perf; use host-model if you
+# plan to live-migrate across mixed CPUs.
+forge_libvirt_cpu_mode: host-passthrough
+
+# ---------------------------------------------------------------------------
+# Clustering
+# ---------------------------------------------------------------------------
+# Set to false to skip cluster setup entirely (single-node deployments).
+forge_cluster_enabled: true
+forge_cluster_transport: knet            # knet | udpu
+# Fencing is mandatory for a production cluster. Options: "sbd" (shared-block
+# watchdog), "ipmi" (lanplus per-host), "none" (dev/lab only — Pacemaker will
+# warn loudly).
+forge_cluster_fence_method: sbd
+forge_cluster_sbd_device: ""             # e.g. /dev/disk/by-id/scsi-XYZ for SBD
+
+# ---------------------------------------------------------------------------
+# Backups — the "PBS-equivalent"
+# ---------------------------------------------------------------------------
+# Sanoid = snapshot retention policy (hourly/daily/monthly/yearly)
+# Syncoid = zfs send|recv replication (the dedup/incremental part of PBS)
+# Restic  = optional off-site (S3/B2/SFTP) encrypted backups
+#
+# Each dataset in forge_backup_sanoid_datasets gets the named template.
+forge_backup_sanoid_templates:
+  production:
+    hourly: 36
+    daily: 30
+    weekly: 8
+    monthly: 12
+    yearly: 2
+    autosnap: true
+    autoprune: true
+  backup_target:
+    autosnap: false
+    autoprune: true
+    hourly: 0
+    daily: 30
+    weekly: 8
+    monthly: 12
+
+forge_backup_sanoid_datasets:
+  - { dataset: "tank/vm", template: "production", recursive: true }
+  - { dataset: "tank/ct", template: "production", recursive: true }
+
+# Replication targets (syncoid). Empty = snapshots only, no replication.
+# Typical setup: push from each primary to a shared tank/backup dataset on
+# another node, or to a dedicated backup box.
+forge_backup_syncoid_jobs: []
+#   - source: "tank/vm"
+#     target: "backup@forge-bak:tank/backup/forge01/vm"
+#     options: "--recursive --no-sync-snap --compress=zstd-fast"
+#     schedule: "*-*-* *:15:00"      # systemd OnCalendar
+
+# Restic off-site (optional). Leaves the repo password + B2/S3 creds for vault.
+forge_backup_restic_enabled: false
+forge_backup_restic_repo: ""           # e.g. b2:forge-offsite:/
+forge_backup_restic_paths:
+  - /tank/backup
+forge_backup_restic_schedule: "*-*-* 03:30:00"
+forge_backup_restic_retention: "--keep-daily 14 --keep-weekly 8 --keep-monthly 12"

@@ -1,0 +1,12 @@
+[commands]
+upgrade_type = {{ forge_base_dnf_automatic_policy }}
+random_sleep = 300
+network_online_timeout = 60
+download_updates = yes
+apply_updates = {{ 'yes' if forge_base_dnf_automatic_apply else 'no' }}
+
+[emitters]
+emit_via = stdio
+
+[base]
+debuglevel = 1

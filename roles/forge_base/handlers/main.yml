@@ -1,0 +1,6 @@
+---
+- name: restart dnf-automatic timer
+  ansible.builtin.systemd:
+    name: dnf-automatic-install.timer
+    state: restarted
+  when: forge_base_dnf_automatic_apply

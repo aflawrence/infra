@@ -1,0 +1,17 @@
+---
+forge_backup_packages:
+  - sanoid                  # ships syncoid too, from EPEL-free Fedora copr
+  - pv
+  - mbuffer
+  - lzop
+
+forge_backup_sanoid_templates: {}
+forge_backup_sanoid_datasets: []
+forge_backup_syncoid_jobs: []
+
+forge_backup_restic_enabled: false
+forge_backup_restic_repo: ""
+forge_backup_restic_paths: []
+forge_backup_restic_schedule: "*-*-* 03:30:00"
+forge_backup_restic_retention: "--keep-daily 14 --keep-weekly 8 --keep-monthly 12"
+forge_backup_restic_env: {}
