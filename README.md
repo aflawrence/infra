@@ -15,6 +15,24 @@ Pacemaker/Corosync for clustering, and Sanoid/Syncoid (+ optional Restic) as
 the PBS-style backup layer. It's independent of the Ubuntu playbook above —
 different `hosts_forge` inventory, different role tree under `roles/forge_*`.
 
+### `forge-iso/` — build it as a bootable installer
+
+If you'd rather hand someone a USB stick than an Ansible run, the same stack
+is packaged as a kickstart-driven installer ISO. See
+[`forge-iso/README.md`](forge-iso/README.md):
+
+```bash
+podman build -t forge-iso-builder -f forge-iso/Containerfile .
+podman run --rm -it --privileged \
+    -v "$PWD/forge-iso:/src:Z" -v "$PWD/out:/out:Z" \
+    forge-iso-builder /src/build.sh
+# → out/forge-<version>-x86_64.iso
+```
+
+Boot the ISO, the installer runs unattended, and first boot drops the
+operator into a short console wizard (admin user, VM bridge NIC, optional
+ZFS pool) before handing off to Cockpit.
+
 ## Special thanks
 * David Stephens for his [Ansible NAS](https://github.com/davestephens/ansible-nas) project. This is where I got the idea and "borrowed" a lot of concepts and implementations from.
 * Jeff Geerling for his book, [Ansible for DevOps](https://www.ansiblefordevops.com/) and his [Ansible 101 series](https://www.youtube.com/watch?v=goclfp6a2IQ&list=PL2_OBreMn7FqZkvMYt6ATmgC0KAGGJNAN) on YouTube.

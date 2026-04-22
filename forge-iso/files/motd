@@ -1,0 +1,9 @@
+
+     ___
+    / _|___ _ _ __ _ ___      forge — Fedora-based hypervisor platform
+   |  _/ _ \ '_/ _` / -_)     Cockpit • 45Drives Houston • OpenZFS
+   |_| \___/_| \__, \___|     KVM/libvirt • Pacemaker • Sanoid/Syncoid
+               |___/
+                              Release:  /etc/forge/release
+                              Dashboard: https://<this-host>:9090
+

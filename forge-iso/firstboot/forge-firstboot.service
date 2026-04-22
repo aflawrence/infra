@@ -1,0 +1,22 @@
+[Unit]
+Description=forge first-boot interactive setup
+ConditionPathExists=!/var/lib/forge/firstboot.done
+After=getty@tty1.service systemd-user-sessions.service
+Before=getty@tty1.service
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+# Run on tty1 so the operator sees it on a freshly-imaged bare-metal box.
+ExecStart=/usr/local/sbin/forge-firstboot
+StandardInput=tty
+StandardOutput=tty
+StandardError=tty
+TTYPath=/dev/tty1
+TTYReset=yes
+TTYVHangup=yes
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,26 @@
+# Reproducible builder for forge ISOs.
+#
+#   podman build -t forge-iso-builder -f forge-iso/Containerfile .
+#   podman run --rm -it --privileged \
+#       -v "$PWD/forge-iso:/src:Z" \
+#       -v "$PWD/out:/out:Z" \
+#       forge-iso-builder /src/build.sh
+#
+# --privileged is needed because mkksiso calls isomd5sum / mkisofs which poke
+# at loopback devices on some hosts. If your container runtime supports it,
+# `--cap-add SYS_ADMIN --device /dev/fuse` is a tighter subset.
+FROM registry.fedoraproject.org/fedora:41
+
+RUN dnf -y install --setopt=install_weak_deps=False \
+        lorax \
+        xorriso \
+        isomd5sum \
+        syslinux \
+        pykickstart \
+        curl \
+        genisoimage \
+        rsync \
+    && dnf clean all
+
+WORKDIR /src
+ENTRYPOINT ["/bin/bash"]
