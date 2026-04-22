@@ -6,6 +6,15 @@ It assumes a fresh Ubuntu Server 20.04 install, access to a non-root user with s
 
 The playbook is mostly being developed for personal use, so stuff is going to be constantly changing and breaking. Use at your own risk and don't expect any help in setting it up on your machine.
 
+## Also in this repo: `forge.yml` — a Fedora-based Proxmox alternative
+
+See [`docs/FORGE.md`](docs/FORGE.md). `forge.yml` builds a Proxmox-style
+hypervisor platform on Fedora Server with Cockpit + 45Drives Houston modules
+as the dashboard, OpenZFS for storage, KVM/libvirt + Podman for workloads,
+Pacemaker/Corosync for clustering, and Sanoid/Syncoid (+ optional Restic) as
+the PBS-style backup layer. It's independent of the Ubuntu playbook above —
+different `hosts_forge` inventory, different role tree under `roles/forge_*`.
+
 ## Special thanks
 * David Stephens for his [Ansible NAS](https://github.com/davestephens/ansible-nas) project. This is where I got the idea and "borrowed" a lot of concepts and implementations from.
 * Jeff Geerling for his book, [Ansible for DevOps](https://www.ansiblefordevops.com/) and his [Ansible 101 series](https://www.youtube.com/watch?v=goclfp6a2IQ&list=PL2_OBreMn7FqZkvMYt6ATmgC0KAGGJNAN) on YouTube.

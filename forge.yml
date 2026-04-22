@@ -1,0 +1,53 @@
+---
+#
+# forge.yml — Fedora-based Proxmox alternative
+#
+# Stack:
+#   * Fedora Server (42+ recommended)
+#   * OpenZFS (zfs-kmod) as the primary storage layer
+#   * KVM/QEMU + libvirt for VMs, systemd-nspawn + Podman for containers
+#   * Cockpit as the management dashboard, extended with the 45Drives Houston modules
+#   * Pacemaker/Corosync + libvirt live migration for clustering
+#   * Sanoid/Syncoid for ZFS snapshot lifecycle + replication (the PBS-equivalent)
+#   * Restic for off-site / object-storage backups
+#
+# Inventory groups:
+#   [forge]          — every hypervisor node
+#   [forge_primary]  — the first node in the cluster (runs cluster bootstrap)
+#
+# Run:
+#   ansible-playbook forge.yml -l forge -K
+#
+
+- name: forge — bootstrap Fedora hypervisor nodes
+  hosts: forge
+  become: true
+  gather_facts: true
+
+  roles:
+    - role: forge_base
+      tags: [forge, base]
+
+    - role: forge_zfs
+      tags: [forge, zfs, storage]
+
+    - role: forge_cockpit
+      tags: [forge, cockpit, dashboard]
+
+    - role: forge_houston
+      tags: [forge, cockpit, houston, dashboard]
+
+    - role: forge_virt
+      tags: [forge, virt, kvm, libvirt]
+
+    - role: forge_backup
+      tags: [forge, backup, sanoid]
+
+- name: forge — cluster bootstrap (runs once from the primary node)
+  hosts: forge_primary
+  become: true
+  gather_facts: true
+
+  roles:
+    - role: forge_cluster
+      tags: [forge, cluster, pacemaker]

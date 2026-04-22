@@ -1,0 +1,84 @@
+---
+- name: Assert Fedora
+  ansible.builtin.assert:
+    that:
+      - ansible_distribution == "Fedora"
+      - ansible_distribution_major_version | int >= 40
+    fail_msg: "forge targets Fedora Server 40 or newer."
+
+- name: Install base packages
+  ansible.builtin.dnf:
+    name: "{{ forge_base_packages }}"
+    state: present
+
+- name: Enable EPEL-like crb/updates (Fedora uses the standard repos, nothing to do)
+  ansible.builtin.debug:
+    msg: "Fedora ships the repos we need by default."
+
+- name: Ensure firewalld is enabled
+  ansible.builtin.systemd:
+    name: firewalld
+    enabled: true
+    state: started
+
+- name: Define firewalld trusted zone for the management network
+  ansible.posix.firewalld:
+    zone: trusted
+    source: "{{ forge_mgmt_cidr }}"
+    permanent: true
+    immediate: true
+    state: enabled
+  when: forge_mgmt_cidr | length > 0
+
+- name: Ensure chrony (time sync) is running — required for cluster quorum
+  ansible.builtin.systemd:
+    name: chronyd
+    enabled: true
+    state: started
+
+- name: Apply tuned profile for virtualization hosts
+  ansible.builtin.command: "tuned-adm profile {{ forge_base_tuned_profile }}"
+  register: _tuned
+  changed_when: "'Cannot set profile' not in _tuned.stderr and _tuned.rc == 0"
+  failed_when: _tuned.rc != 0
+
+- name: Configure dnf-automatic
+  ansible.builtin.template:
+    src: automatic.conf.j2
+    dest: /etc/dnf/automatic.conf
+    owner: root
+    group: root
+    mode: "0644"
+  notify: restart dnf-automatic timer
+
+- name: Enable dnf-automatic timer
+  ansible.builtin.systemd:
+    name: "{{ 'dnf-automatic-install.timer' if forge_base_dnf_automatic_apply else 'dnf-automatic.timer' }}"
+    enabled: true
+    state: started
+
+- name: Ensure admin user exists
+  ansible.builtin.user:
+    name: "{{ forge_admin_user }}"
+    groups: wheel
+    append: true
+    shell: /bin/bash
+    state: present
+  when: forge_admin_user | length > 0
+
+- name: Install admin authorized_keys
+  ansible.posix.authorized_key:
+    user: "{{ forge_admin_user }}"
+    key: "{{ item }}"
+    state: present
+  loop: "{{ forge_admin_ssh_keys }}"
+  when: forge_admin_user | length > 0
+
+- name: Ensure /etc/hosts has every forge node (needed before DNS exists)
+  ansible.builtin.blockinfile:
+    path: /etc/hosts
+    marker: "# {mark} ANSIBLE MANAGED — forge cluster members"
+    block: |
+      {% for h in groups['forge'] | default([]) %}
+      {{ hostvars[h].ansible_host | default(h) }} {{ h }}
+      {% endfor %}

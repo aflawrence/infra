@@ -1,0 +1,9 @@
+[Unit]
+Description=forge syncoid replication schedule: {{ item.1.source }}
+
+[Timer]
+OnCalendar={{ item.1.schedule | default('*-*-* *:15:00') }}
+Persistent=true
+
+[Install]
+WantedBy=timers.target

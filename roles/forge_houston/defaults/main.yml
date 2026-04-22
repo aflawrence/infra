@@ -1,0 +1,7 @@
+---
+# 45Drives hosts their own RPM repo. The setup script adds a .repo file +
+# GPG key — we replicate that declaratively so the role is idempotent and
+# doesn't require curl|bash.
+forge_houston_repo_url: "https://repo.45drives.com/lists/45drives.repo"
+forge_houston_repo_gpg: "https://repo.45drives.com/key/gpg.asc"
+forge_houston_modules: []

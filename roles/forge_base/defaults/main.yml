@@ -1,0 +1,30 @@
+---
+forge_base_packages:
+  - policycoreutils-python-utils
+  - firewalld
+  - chrony
+  - dnf-automatic
+  - dnf-plugins-core
+  - tuned
+  - tmux
+  - htop
+  - lsof
+  - strace
+  - git
+  - curl
+  - jq
+  - pciutils
+  - usbutils
+  - rsync
+  - bash-completion
+  - bind-utils
+  - nvme-cli
+  - smartmontools
+  - lm_sensors
+
+# tuned profile — virtual-host is tuned upstream's KVM host profile.
+forge_base_tuned_profile: virtual-host
+
+# dnf-automatic: security errata only by default; set to "default" for all.
+forge_base_dnf_automatic_policy: security
+forge_base_dnf_automatic_apply: true        # install updates, not just download

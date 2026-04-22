@@ -8,3 +8,9 @@ roles:
   - name: oefenweb.dns
   - name: notthebee.ubuntu_autoinstall
   - name: ironicbadger.ansible_role_snapraid
+
+# Collections used by the forge.yml (Fedora hypervisor) playbook.
+collections:
+  - name: ansible.posix          # firewalld, authorized_key, mount
+  - name: community.general      # zfs module, modprobe
+  - name: community.libvirt      # virt_pool, virt_net, virt

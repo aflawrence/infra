@@ -1,0 +1,25 @@
+---
+- name: Import 45Drives GPG key
+  ansible.builtin.rpm_key:
+    key: "{{ forge_houston_repo_gpg }}"
+    state: present
+
+- name: Install 45Drives repo definition
+  ansible.builtin.get_url:
+    url: "{{ forge_houston_repo_url }}"
+    dest: /etc/yum.repos.d/45drives.repo
+    mode: "0644"
+  # The repo file ships with $releasever substitution and the correct GPG key
+  # path, so Fedora picks up the right channel automatically.
+
+- name: Refresh dnf metadata for the 45Drives repo
+  ansible.builtin.command: dnf -q --disablerepo=* --enablerepo=45drives makecache
+  changed_when: false
+
+- name: Install Houston modules
+  ansible.builtin.dnf:
+    name: "{{ forge_houston_modules }}"
+    state: present
+    enablerepo: 45drives
+  # Houston modules are all optional drop-ins for Cockpit — installing them is
+  # safe even if you don't use every feature.

@@ -1,0 +1,98 @@
+---
+- name: Verify hardware virtualization extensions are present
+  ansible.builtin.shell: |
+    set -o pipefail
+    grep -Ec '(vmx|svm)' /proc/cpuinfo
+  register: _hvm
+  changed_when: false
+  failed_when: _hvm.stdout | int == 0
+  # If this fails you're either on a VM without nested virt or on hardware
+  # that can't actually host KVM guests — everything below is moot.
+
+- name: Install virtualization stack
+  ansible.builtin.dnf:
+    name: "{{ forge_virt_packages }}"
+    state: present
+
+- name: Enable libvirt services
+  ansible.builtin.systemd:
+    name: "{{ item }}"
+    enabled: true
+    state: started
+  loop: "{{ forge_virt_services }}"
+
+- name: Add admin user to libvirt group for non-root virsh
+  ansible.builtin.user:
+    name: "{{ forge_admin_user }}"
+    groups: libvirt
+    append: true
+  when: forge_admin_user | length > 0
+
+# ---------------------------------------------------------------------------
+# Management bridge
+# ---------------------------------------------------------------------------
+# Proxmox creates vmbr0 on top of the primary NIC during install. We do the
+# same with NetworkManager — matching the approach cockpit-networkmanager
+# expects so the bridge is editable from the UI afterward.
+- name: Check whether VM bridge already exists
+  ansible.builtin.command: "nmcli -g NAME connection show"
+  register: _nmcli_connections
+  changed_when: false
+
+- name: Create VM bridge connection
+  ansible.builtin.command: >
+    nmcli connection add type bridge ifname {{ forge_vm_bridge }}
+    con-name {{ forge_vm_bridge }} stp no
+  when:
+    - forge_vm_bridge not in _nmcli_connections.stdout_lines
+    - forge_vm_bridge_interface | length > 0
+
+- name: Enslave physical interface to the bridge
+  ansible.builtin.command: >
+    nmcli connection add type ethernet slave-type bridge
+    ifname {{ forge_vm_bridge_interface }}
+    master {{ forge_vm_bridge }}
+    con-name {{ forge_vm_bridge }}-port-{{ forge_vm_bridge_interface }}
+  when:
+    - (forge_vm_bridge + '-port-' + forge_vm_bridge_interface) not in _nmcli_connections.stdout_lines
+    - forge_vm_bridge_interface | length > 0
+
+- name: Bring up the bridge
+  ansible.builtin.command: "nmcli connection up {{ forge_vm_bridge }}"
+  register: _br_up
+  changed_when: "'successfully activated' in _br_up.stdout"
+  failed_when: false
+  when: forge_vm_bridge_interface | length > 0
+
+# ---------------------------------------------------------------------------
+# libvirt storage pools (backed by ZFS datasets)
+# ---------------------------------------------------------------------------
+- name: Gather existing libvirt pools
+  ansible.builtin.command: "virsh pool-list --all --name"
+  register: _pool_list
+  changed_when: false
+
+- name: Define libvirt storage pools
+  community.libvirt.virt_pool:
+    name: "{{ item.name }}"
+    command: define
+    xml: "{{ lookup('template', 'pool.xml.j2') }}"
+  loop: "{{ forge_libvirt_pools }}"
+  when: item.name not in _pool_list.stdout_lines
+
+- name: Build + autostart libvirt pools
+  community.libvirt.virt_pool:
+    name: "{{ item.name }}"
+    autostart: "{{ item.autostart | default(true) }}"
+    state: active
+  loop: "{{ forge_libvirt_pools }}"
+
+# ---------------------------------------------------------------------------
+# Default network — keep the built-in 'default' NAT net and add the bridge
+# ---------------------------------------------------------------------------
+- name: Ensure default libvirt net is autostarted
+  community.libvirt.virt_net:
+    name: default
+    autostart: true
+    state: active
+  failed_when: false       # default net may be missing on minimal installs

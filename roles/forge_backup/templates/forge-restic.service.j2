@@ -1,0 +1,12 @@
+[Unit]
+Description=forge restic off-site backup
+Wants=network-online.target
+After=network-online.target zfs.target
+
+[Service]
+Type=oneshot
+EnvironmentFile=/etc/forge/restic/env
+ExecStart=/usr/local/sbin/forge-restic-backup
+Nice=15
+IOSchedulingClass=best-effort
+IOSchedulingPriority=7

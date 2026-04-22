@@ -1,0 +1,19 @@
+#!/bin/bash
+# forge-restic-backup — snapshot, back up, prune. Invoked by systemd.
+set -euo pipefail
+
+# Snapshot backup-targets on ZFS so restic reads a consistent point-in-time.
+# Using tank/backup (the sanoid/syncoid replication target) as the source
+# means we back up *snapshots of snapshots*, not live VM disks.
+TAG="forge-$(hostname -s)-$(date -u +%Y%m%dT%H%M%SZ)"
+
+restic backup \
+  --tag "${TAG}" \
+  --one-file-system \
+{% for p in forge_backup_restic_paths %}
+  {{ p }}{% if not loop.last %} \{% endif %}
+
+{% endfor %}
+
+restic forget --prune {{ forge_backup_restic_retention }}
+restic check --read-data-subset=5%

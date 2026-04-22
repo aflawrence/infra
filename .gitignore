@@ -1,10 +1,15 @@
 /files/docker_persistent_data/*
 !/files/docker_persistent_data/.gitkeep
 /hosts
+/hosts_forge
 .DS_Store
 secret.yml
-/group_vars/
+/group_vars/*
+!/group_vars/all/
+!/group_vars/forge/
+/group_vars/all/*
+!/group_vars/all/vars.yml
+/group_vars/forge/secret.yml
 /host_vars/
 !/host_vars/.gitkeep
-!/group_vars/all/vars.yml
 mountsraspi
