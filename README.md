@@ -33,6 +33,10 @@ Boot the ISO, the installer runs unattended, and first boot drops the
 operator into a short console wizard (admin user, VM bridge NIC, optional
 ZFS pool) before handing off to Cockpit.
 
+**→ Bringing it up on hardware?** See [`docs/BRING-UP.md`](docs/BRING-UP.md)
+for the step-by-step runbook, including a QEMU smoke-test loop that lets
+you validate a build in ~10 minutes before touching a USB stick.
+
 ## Special thanks
 * David Stephens for his [Ansible NAS](https://github.com/davestephens/ansible-nas) project. This is where I got the idea and "borrowed" a lot of concepts and implementations from.
 * Jeff Geerling for his book, [Ansible for DevOps](https://www.ansiblefordevops.com/) and his [Ansible 101 series](https://www.youtube.com/watch?v=goclfp6a2IQ&list=PL2_OBreMn7FqZkvMYt6ATmgC0KAGGJNAN) on YouTube.
