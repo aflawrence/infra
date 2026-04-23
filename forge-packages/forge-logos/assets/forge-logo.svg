@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  forge primary logo. Deliberately simple: an anvil silhouette + the name in a
+  bold sans. Orange (#f97316) + near-black (#171717) keeps it legible on both
+  light and dark backgrounds. Rasterized at build time into PNGs for Plymouth
+  and anaconda.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <rect width="512" height="512" fill="#171717"/>
+
+  <!-- anvil glyph -->
+  <g transform="translate(96 96) scale(1)" fill="#f97316">
+    <path d="M40 180 L280 180 L260 220 L60 220 Z"/>   <!-- top face -->
+    <path d="M130 220 L190 220 L190 260 L130 260 Z"/> <!-- waist -->
+    <path d="M70 260 L250 260 L250 300 L70 300 Z"/>   <!-- base -->
+    <path d="M280 160 L320 170 L320 200 L280 190 Z"/> <!-- horn -->
+  </g>
+
+  <!-- wordmark -->
+  <text x="256" y="450" font-family="DejaVu Sans, Noto Sans, sans-serif"
+        font-size="72" font-weight="700" text-anchor="middle" fill="#f5f5f5"
+        letter-spacing="-2">forge</text>
+</svg>

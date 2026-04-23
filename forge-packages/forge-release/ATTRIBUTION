@@ -1,0 +1,17 @@
+forge Linux is an independent project based on Fedora Linux.
+
+Fedora is a registered trademark of Red Hat, Inc. Red Hat, Inc. is
+neither affiliated with the forge project nor endorses it.
+
+forge redistributes binary packages from the Fedora Project, the OpenZFS
+project (https://openzfs.org), and 45Drives (https://45drives.com) under
+each project's respective license. No Fedora trademarks, logos, or
+"Infinity" marks are reproduced in forge-branded materials.
+
+Source for all redistributed packages is available from each project's
+upstream. forge's own source (this RPM, the branding assets, the
+kickstart, and the Ansible roles) is at:
+  https://github.com/aflawrence/infra
+
+This notice is mandated by the Fedora Trademark Guidelines:
+  https://fedoraproject.org/wiki/Legal:Trademark_guidelines

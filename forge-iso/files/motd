@@ -1,9 +1,12 @@
 
      ___
-    / _|___ _ _ __ _ ___      forge — Fedora-based hypervisor platform
+    / _|___ _ _ __ _ ___      forge Linux — a hypervisor platform
    |  _/ _ \ '_/ _` / -_)     Cockpit • 45Drives Houston • OpenZFS
    |_| \___/_| \__, \___|     KVM/libvirt • Pacemaker • Sanoid/Syncoid
                |___/
-                              Release:  /etc/forge/release
+                              Release:   /etc/forge/release
                               Dashboard: https://<this-host>:9090
+
+  forge Linux is an independent project based on Fedora Linux. Fedora is
+  a trademark of Red Hat, Inc. Full notice: /etc/forge/ATTRIBUTION
 

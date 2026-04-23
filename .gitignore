@@ -13,3 +13,9 @@ secret.yml
 /host_vars/
 !/host_vars/.gitkeep
 mountsraspi
+
+# forge build artefacts
+/forge-packages/repo/
+/forge-iso/product.img
+/out/
+

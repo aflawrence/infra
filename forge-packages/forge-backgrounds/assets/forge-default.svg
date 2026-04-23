@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- forge default desktop/login background. 1920x1080 → 4K is handled by
+     the consumer (GDM/SDDM/etc) via SVG scaling. Deliberately austere: a
+     dark gradient + the wordmark in a corner. Keeps the focus on Cockpit. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" width="1920" height="1080">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0"   stop-color="#0a0a0a"/>
+      <stop offset="0.5" stop-color="#171717"/>
+      <stop offset="1"   stop-color="#0a0a0a"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1920" height="1080" fill="url(#bg)"/>
+
+  <!-- faint horizon line -->
+  <line x1="0" y1="540" x2="1920" y2="540" stroke="#262626" stroke-width="1"/>
+
+  <!-- wordmark, bottom-right, low contrast -->
+  <g transform="translate(1640 980)">
+    <g fill="#f97316" opacity="0.85">
+      <path d="M0 -30 L40 -30 L37 -22 L3 -22 Z"/>
+      <path d="M15 -22 L25 -22 L25 -15 L15 -15 Z"/>
+      <path d="M5 -15 L35 -15 L35 -8 L5 -8 Z"/>
+    </g>
+    <text x="50" y="-10" font-family="DejaVu Sans, sans-serif" font-size="28"
+          font-weight="700" fill="#d4d4d4" opacity="0.9" letter-spacing="-1">forge</text>
+  </g>
+</svg>

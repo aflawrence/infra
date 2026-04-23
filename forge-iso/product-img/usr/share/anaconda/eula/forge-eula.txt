@@ -1,0 +1,15 @@
+forge Linux — Terms
+
+forge Linux is an independent, open-source distribution composed of free
+software. Each package retains its original license. No additional EULA is
+imposed on the system as a whole.
+
+forge Linux is based on Fedora Linux. Fedora is a trademark of Red Hat, Inc.
+Red Hat, Inc. is neither affiliated with the forge project nor endorses it.
+
+By installing forge Linux you agree to comply with the license of each
+constituent package. Source for all redistributed packages is available from
+each project's upstream; see /usr/share/licenses/forge-release/ATTRIBUTION
+after installation for the complete list.
+
+This software is provided "as is" without warranty of any kind.

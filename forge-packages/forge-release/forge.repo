@@ -1,0 +1,11 @@
+# forge update channel.
+#
+# Enable this (enabled=1) once a public forge repository URL is published.
+# Until then forge's branding + firstboot RPMs ship only on the ISO.
+[forge]
+name=forge Linux $releasever - $basearch
+baseurl=https://example.invalid/forge/releases/$releasever/$basearch/
+enabled=0
+gpgcheck=1
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-forge
+metadata_expire=6h

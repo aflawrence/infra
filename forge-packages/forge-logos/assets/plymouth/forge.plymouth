@@ -1,0 +1,8 @@
+[Plymouth Theme]
+Name=forge
+Description=forge boot splash — centered logo over a dark field with a progress bar.
+ModuleName=script
+
+[script]
+ImageDir=/usr/share/plymouth/themes/forge
+ScriptFile=/usr/share/plymouth/themes/forge/forge.script

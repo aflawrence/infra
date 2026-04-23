@@ -30,6 +30,12 @@ timezone --utc Etc/UTC
 url --mirrorlist="https://mirrors.fedoraproject.org/mirrorlist?repo=fedora-$releasever&arch=$basearch"
 repo --name=updates --mirrorlist="https://mirrors.fedoraproject.org/mirrorlist?repo=updates-released-f$releasever&arch=$basearch"
 
+# On-ISO forge repo — ships forge-release, forge-logos, forge-backgrounds.
+# Built by forge-packages/build-rpms.sh and dropped into /forge/repo by
+# forge-iso/build.sh. Referenced here so the %packages block below can
+# install them without network access.
+repo --name=forge --baseurl=hd:LABEL=FORGE:/forge/repo --install --cost=50
+
 # --- Install mode ------------------------------------------------------------
 text
 skipx
@@ -132,9 +138,15 @@ lzop
 kernel-devel
 kernel-headers
 
+# forge branding — these Obsolete fedora-release/fedora-logos/fedora-backgrounds
+# cleanly, so /etc/os-release, Plymouth, and anaconda all say "forge Linux".
+forge-release
+forge-release-common
+forge-logos
+forge-backgrounds
+
 # Remove things we don't want on a hypervisor
 -PackageKit-command-not-found
--plymouth
 %end
 
 # =============================================================================

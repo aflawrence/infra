@@ -1,0 +1,45 @@
+// forge Plymouth boot splash.
+// Paints a dark background, centers the logo, and draws a minimal progress
+// bar. No rotating spinners — keeps the visual quiet enough that the kernel
+// console messages stay the star of the show when they leak through.
+
+// ---- background ------------------------------------------------------------
+Window.SetBackgroundTopColor(0.09, 0.09, 0.09);      // #171717
+Window.SetBackgroundBottomColor(0.09, 0.09, 0.09);
+
+// ---- logo ------------------------------------------------------------------
+logo.image = Image("logo.png");
+logo.sprite = Sprite(logo.image);
+logo.width  = logo.image.GetWidth();
+logo.height = logo.image.GetHeight();
+logo.x = Window.GetX() + (Window.GetWidth()  - logo.width)  / 2;
+logo.y = Window.GetY() + (Window.GetHeight() - logo.height) / 2 - 40;
+logo.sprite.SetPosition(logo.x, logo.y, 0);
+
+// ---- progress bar ----------------------------------------------------------
+progress_bar.original = Image("progress-bar.png");
+progress_bar.sprite   = Sprite();
+progress_bar.x = Window.GetX() + (Window.GetWidth() - progress_bar.original.GetWidth()) / 2;
+progress_bar.y = logo.y + logo.height + 48;
+progress_bar.sprite.SetPosition(progress_bar.x, progress_bar.y, 1);
+
+fun progress_callback(duration, progress) {
+    if (progress_bar.original) {
+        w = Math.Int(progress_bar.original.GetWidth() * progress);
+        if (w < 1) w = 1;
+        progress_bar.sprite.SetImage(progress_bar.original.Scale(w, progress_bar.original.GetHeight()));
+    }
+}
+Plymouth.SetBootProgressFunction(progress_callback);
+
+// ---- password prompt (for LUKS/root fsck) ----------------------------------
+fun display_password_callback(prompt, bullets) {
+    prompt_image = Image.Text(prompt, 1, 1, 1);
+    prompt_sprite = Sprite(prompt_image);
+    prompt_sprite.SetPosition(
+        Window.GetX() + (Window.GetWidth() - prompt_image.GetWidth()) / 2,
+        logo.y + logo.height + 96,
+        5
+    );
+}
+Plymouth.SetDisplayPasswordFunction(display_password_callback);

@@ -1,0 +1,9 @@
+[Main]
+Product=forge Linux
+Version=0.1.0
+BugURL=https://github.com/aflawrence/infra/issues
+IsFinal=True
+UUID=%FORGE_BUILDSTAMP_UUID%
+
+[Compose]
+Lorax=forge-iso/build.sh

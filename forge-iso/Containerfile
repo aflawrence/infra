@@ -20,6 +20,12 @@ RUN dnf -y install --setopt=install_weak_deps=False \
         curl \
         genisoimage \
         rsync \
+        rpm-build \
+        rpmdevtools \
+        createrepo_c \
+        librsvg2-tools \
+        ImageMagick \
+        cpio \
     && dnf clean all
 
 WORKDIR /src

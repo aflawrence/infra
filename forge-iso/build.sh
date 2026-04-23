@@ -65,7 +65,22 @@ ksvalidator -v "RHEL$(echo "$FEDORA_VER" | head -c1)" "${SCRIPT_DIR}/forge.ks" |
     ksvalidator "${SCRIPT_DIR}/forge.ks"
 
 # -----------------------------------------------------------------------------
-# 3. Stage the forge support tree — mkksiso's --add copies it to /forge/ on
+# 3. Build the forge-* RPMs (branding) and the anaconda product.img
+# -----------------------------------------------------------------------------
+REPO_DIR="${SCRIPT_DIR}/../forge-packages/repo"
+if [ ! -d "$REPO_DIR" ] || [ -z "$(find "$REPO_DIR" -maxdepth 1 -name '*.rpm' 2>/dev/null)" ]; then
+    echo "==> Building forge-release, forge-logos, forge-backgrounds"
+    (cd "${SCRIPT_DIR}/../forge-packages" && FORGE_VERSION="$FORGE_VERSION" ./build-rpms.sh)
+else
+    echo "==> Re-using existing forge-packages/repo/"
+fi
+
+echo "==> Building anaconda product.img (installer rebrand)"
+FORGE_VERSION="$FORGE_VERSION" FEDORA_VER="$FEDORA_VER" \
+    "${SCRIPT_DIR}/build-product-img.sh"
+
+# -----------------------------------------------------------------------------
+# 4. Stage the forge support tree — mkksiso's --add copies it to /forge/ on
 #    the ISO, which the %post block pulls from /run/install/repo/forge.
 # -----------------------------------------------------------------------------
 STAGE_DIR="${WORK_DIR}/stage"
@@ -74,6 +89,11 @@ mkdir -p "$STAGE_DIR/forge"
 cp -a "${SCRIPT_DIR}/post"       "$STAGE_DIR/forge/"
 cp -a "${SCRIPT_DIR}/firstboot"  "$STAGE_DIR/forge/"
 cp -a "${SCRIPT_DIR}/files"      "$STAGE_DIR/forge/"
+
+# Bundle the freshly-built RPMs as an on-ISO repository that the kickstart
+# %packages block consumes via `repo --name=forge --baseurl=hd:LABEL=FORGE:/forge/repo`.
+cp -a "${REPO_DIR}" "$STAGE_DIR/forge/repo"
+
 # Ensure scripts are executable after the ISO9660 copy.
 find "$STAGE_DIR/forge" -name '*.sh' -exec chmod +x {} +
 
@@ -85,19 +105,34 @@ BUILT_ON=${HOSTNAME:-unknown}
 EOF
 
 # -----------------------------------------------------------------------------
-# 4. Build the ISO
+# 5. Inject the product.img into the source ISO before mkksiso runs. xorriso
+#    has the path precision we need; mkksiso's --add can't reliably drop a
+#    file at /images/product.img across every lorax version.
+# -----------------------------------------------------------------------------
+INTERMEDIATE_ISO="${WORK_DIR}/intermediate.iso"
+echo "==> Injecting anaconda product.img into source ISO"
+xorriso -indev "$SOURCE_ISO" \
+        -outdev "$INTERMEDIATE_ISO" \
+        -boot_image any replay \
+        -map "${SCRIPT_DIR}/product.img" /images/product.img \
+        -compliance no_emul_toc
+
+# -----------------------------------------------------------------------------
+# 6. Build the final ISO
 # -----------------------------------------------------------------------------
 echo "==> Building ${OUT_ISO}"
-# --ks           embed forge.ks as the auto-executed kickstart
-# --add          drop the support tree at /forge on the resulting ISO
-# --cmdline      append to the default bootloader entry so the installer picks
-#                up the kickstart without operator interaction
+# --ks        embed forge.ks as the auto-executed kickstart
+# --add       drop the support tree + forge repo at /forge on the ISO
+# --cmdline   append to the default bootloader entry so the installer picks
+#             up the kickstart without operator interaction
 mkksiso \
     --ks "${SCRIPT_DIR}/forge.ks" \
     --add "${STAGE_DIR}/forge" \
     --cmdline "inst.ks=hd:LABEL=FORGE:/forge.ks inst.stage2=hd:LABEL=FORGE quiet" \
     --volid FORGE \
-    "$SOURCE_ISO" "$OUT_ISO"
+    "$INTERMEDIATE_ISO" "$OUT_ISO"
+
+rm -f "$INTERMEDIATE_ISO"
 
 # -----------------------------------------------------------------------------
 # 5. Re-implant the MD5 checksum (only needed on some legacy loaders)
