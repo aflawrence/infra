@@ -1,0 +1,21 @@
+{
+  "version": 0,
+  "name": "forge-overview",
+  "requires": {
+    "cockpit": "266"
+  },
+  "menu": {
+    "index": {
+      "label": "Overview",
+      "order": -10,
+      "path": "index.html",
+      "docs": [
+        { "label": "forge docs", "url": "https://github.com/aflawrence/infra/blob/main/docs/FORGE.md" }
+      ],
+      "keywords": [
+        { "matches": ["forge", "overview", "dashboard", "cluster", "zfs", "backup"] }
+      ]
+    }
+  },
+  "content-security-policy": "default-src 'self'; connect-src 'self' ws: wss:; style-src 'self' 'unsafe-inline'; script-src 'self'; img-src 'self' data:; font-src 'self' data:"
+}

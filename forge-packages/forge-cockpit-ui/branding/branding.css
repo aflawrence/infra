@@ -1,0 +1,96 @@
+/*
+ * forge branding for Cockpit. Auto-loaded when /etc/os-release carries
+ * ID=forge (set by the forge-release RPM). Applies to every Cockpit page
+ * — login screen, shell, and module iframes — so the whole dashboard
+ * reads as one product instead of Cockpit-with-random-modules.
+ *
+ * The strategy is CSS custom property overrides on top of PatternFly's
+ * design tokens. We don't touch class names, which means upstream
+ * PatternFly/Cockpit upgrades keep working as long as the token names
+ * don't churn (they have been stable across the v4→v5→v6 transitions).
+ */
+
+:root,
+.pf-v5-theme-dark {
+    /* --- brand ------------------------------------------------------- */
+    --pf-v5-global--primary-color--100:           #f97316;
+    --pf-v5-global--primary-color--200:           #ea580c;
+    --pf-v5-global--link--Color:                  #f97316;
+    --pf-v5-global--link--Color--hover:           #fb923c;
+    --pf-v5-global--active-color--100:            #f97316;
+
+    /* --- surfaces (dark, high contrast) ------------------------------- */
+    --pf-v5-global--BackgroundColor--100:         #0a0a0a;
+    --pf-v5-global--BackgroundColor--150:         #171717;
+    --pf-v5-global--BackgroundColor--200:         #1f1f1f;
+    --pf-v5-global--BackgroundColor--dark-100:    #0a0a0a;
+    --pf-v5-global--BackgroundColor--dark-200:    #171717;
+
+    /* --- text --------------------------------------------------------- */
+    --pf-v5-global--Color--100:                   #f5f5f5;
+    --pf-v5-global--Color--200:                   #a3a3a3;
+    --pf-v5-global--Color--300:                   #737373;
+    --pf-v5-global--Color--dark-100:              #f5f5f5;
+    --pf-v5-global--Color--dark-200:              #a3a3a3;
+
+    /* --- borders ------------------------------------------------------ */
+    --pf-v5-global--BorderColor--100:             #262626;
+    --pf-v5-global--BorderColor--200:             #333333;
+    --pf-v5-global--BorderColor--300:             #404040;
+
+    /* --- status semantics (used across modules) ----------------------- */
+    --pf-v5-global--success-color--100:           #22c55e;
+    --pf-v5-global--warning-color--100:           #eab308;
+    --pf-v5-global--danger-color--100:            #ef4444;
+    --pf-v5-global--info-color--100:              #38bdf8;
+
+    /* --- typography --------------------------------------------------- */
+    --pf-v5-global--FontFamily--sans-serif:       "Inter", "DejaVu Sans", system-ui, -apple-system, sans-serif;
+    --pf-v5-global--FontFamily--monospace:        "JetBrains Mono", "DejaVu Sans Mono", ui-monospace, monospace;
+
+    color-scheme: dark;
+}
+
+/* Sidebar — sharper, denser, keyboard-operable. */
+.pf-v5-c-nav__link,
+.pf-c-nav__link {
+    border-left: 2px solid transparent !important;
+    transition: border-color 100ms ease, background-color 100ms ease;
+}
+.pf-v5-c-nav__link.pf-m-current,
+.pf-c-nav__link.pf-m-current {
+    border-left-color: #f97316 !important;
+    background: rgba(249, 115, 22, 0.06) !important;
+}
+
+/* Cockpit page header — tightens the visual weight so our content leads. */
+.ct-page-header,
+.pf-v5-c-page__header {
+    background: #0a0a0a !important;
+    border-bottom: 1px solid #262626 !important;
+}
+
+/* Tables — default PF tables are airy. Operators want density. */
+.pf-v5-c-table,
+.pf-c-table {
+    font-family: "JetBrains Mono", "DejaVu Sans Mono", ui-monospace, monospace;
+    font-size: 12px;
+}
+.pf-v5-c-table tbody tr:hover {
+    background: rgba(249, 115, 22, 0.04) !important;
+}
+
+/* Primary buttons — keep the forge accent explicitly, not just via vars,
+   so a browser without CSS-var support still picks up the brand. */
+.pf-v5-c-button.pf-m-primary,
+.pf-c-button.pf-m-primary {
+    background: #f97316 !important;
+    border-color: #f97316 !important;
+    color: #0a0a0a !important;
+    font-weight: 600;
+}
+.pf-v5-c-button.pf-m-primary:hover,
+.pf-c-button.pf-m-primary:hover {
+    background: #fb923c !important;
+    border-color: #fb923c !important;
+}

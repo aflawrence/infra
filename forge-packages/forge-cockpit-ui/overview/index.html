@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>forge — Overview</title>
+    <!-- Cockpit's base JS bundle exposes the `cockpit` global used below. -->
+    <script src="../base1/cockpit.js"></script>
+    <link rel="stylesheet" href="../base1/patternfly-cockpit.css">
+    <link rel="stylesheet" href="overview.css">
+</head>
+<body class="forge-ui">
+    <div class="forge-header">
+        <div class="forge-header-brand">
+            <h1>forge</h1>
+            <span class="forge-subtitle" id="host-ident">—</span>
+        </div>
+        <div class="forge-header-meta">
+            <span id="uptime" class="pill">—</span>
+            <span id="kernel" class="pill muted">—</span>
+            <span id="refresh" class="pill muted" title="Last refresh">—</span>
+        </div>
+    </div>
+
+    <main class="forge-grid">
+        <!-- Cluster ----------------------------------------------------- -->
+        <section class="card" data-kind="cluster">
+            <header>
+                <h2>Cluster</h2>
+                <span class="status-dot" data-status="unknown"></span>
+            </header>
+            <div class="card-body">
+                <div class="metric-row">
+                    <span class="label">Name</span>
+                    <span class="value" id="cluster-name">—</span>
+                </div>
+                <div class="metric-row">
+                    <span class="label">Nodes</span>
+                    <span class="value" id="cluster-nodes">—</span>
+                </div>
+                <div class="metric-row">
+                    <span class="label">Quorum</span>
+                    <span class="value" id="cluster-quorum">—</span>
+                </div>
+                <div class="metric-row">
+                    <span class="label">Fencing</span>
+                    <span class="value" id="cluster-fencing">—</span>
+                </div>
+                <div class="metric-row">
+                    <span class="label">HA resources</span>
+                    <span class="value" id="cluster-resources">—</span>
+                </div>
+            </div>
+            <footer class="card-footer">
+                <a href="/system/terminal" class="deeplink">Open terminal → <code>pcs status</code></a>
+            </footer>
+        </section>
+
+        <!-- Storage ----------------------------------------------------- -->
+        <section class="card" data-kind="storage">
+            <header>
+                <h2>Storage</h2>
+                <span class="status-dot" data-status="unknown"></span>
+            </header>
+            <div class="card-body">
+                <div id="pool-list" class="pool-list">
+                    <div class="empty">No ZFS pools detected.</div>
+                </div>
+                <div class="metric-row arc-row">
+                    <span class="label">ARC</span>
+                    <span class="value" id="arc-usage">—</span>
+                </div>
+                <div class="progress"><div class="progress-fill" id="arc-bar" style="width:0%"></div></div>
+            </div>
+            <footer class="card-footer">
+                <a href="/cockpit-zfs-manager" class="deeplink">Manage ZFS →</a>
+            </footer>
+        </section>
+
+        <!-- Backups ----------------------------------------------------- -->
+        <section class="card" data-kind="backup">
+            <header>
+                <h2>Backups</h2>
+                <span class="status-dot" data-status="unknown"></span>
+            </header>
+            <div class="card-body">
+                <table class="timer-table" id="timer-table">
+                    <thead>
+                        <tr><th>Job</th><th>Last</th><th>Next</th></tr>
+                    </thead>
+                    <tbody><tr><td colspan="3" class="empty">No timers found.</td></tr></tbody>
+                </table>
+            </div>
+            <footer class="card-footer">
+                <a href="/cockpit-scheduler" class="deeplink">Scheduler →</a>
+            </footer>
+        </section>
+
+        <!-- VMs --------------------------------------------------------- -->
+        <section class="card" data-kind="vms">
+            <header>
+                <h2>Virtual machines</h2>
+                <span class="status-dot" data-status="unknown"></span>
+            </header>
+            <div class="card-body">
+                <div class="metric-row">
+                    <span class="label">Running / total</span>
+                    <span class="value" id="vm-count">—</span>
+                </div>
+                <ul class="vm-list" id="vm-list">
+                    <li class="empty">No VMs defined.</li>
+                </ul>
+            </div>
+            <footer class="card-footer">
+                <a href="/machines" class="deeplink">Virtual machines →</a>
+            </footer>
+        </section>
+    </main>
+
+    <script src="overview.js"></script>
+</body>
+</html>

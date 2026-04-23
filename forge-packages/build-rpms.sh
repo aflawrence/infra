@@ -35,7 +35,11 @@ for d in BUILD BUILDROOT RPMS SRPMS SOURCES SPECS; do
     mkdir -p "$WORK/$d"
 done
 
-PACKAGES=(forge-release forge-logos forge-backgrounds)
+PACKAGES=(forge-release forge-logos forge-backgrounds forge-cockpit-ui)
+
+# forge-cockpit-ui rasterizes logos from forge-logos' SVG. Stage it into
+# SOURCES up front so the spec can reference it unconditionally.
+cp -a "${SCRIPT_DIR}/forge-logos/assets/forge-logo.svg" "${WORK}/SOURCES/"
 
 for pkg in "${PACKAGES[@]}"; do
     echo "==> building ${pkg}"

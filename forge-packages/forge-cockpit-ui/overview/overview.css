@@ -1,0 +1,320 @@
+/*
+ * forge overview module — component-scoped styles.
+ *
+ * Uses CSS custom properties so the color palette can be rethemed by the
+ * forge branding.css (see ../branding/) without editing this file.
+ */
+
+:root {
+    --forge-bg:         #0a0a0a;
+    --forge-surface:    #171717;
+    --forge-surface-2:  #1f1f1f;
+    --forge-border:     #262626;
+    --forge-border-2:   #333333;
+    --forge-text:       #f5f5f5;
+    --forge-text-dim:   #a3a3a3;
+    --forge-text-mute:  #737373;
+    --forge-accent:     #f97316;
+    --forge-accent-dim: #c2410c;
+    --forge-ok:         #22c55e;
+    --forge-warn:       #eab308;
+    --forge-err:        #ef4444;
+    --forge-font:       "Inter", "DejaVu Sans", system-ui, -apple-system, sans-serif;
+    --forge-mono:       "JetBrains Mono", "DejaVu Sans Mono", ui-monospace, monospace;
+    --forge-radius:     10px;
+    --forge-shadow:     0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.3);
+}
+
+html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--forge-bg);
+    color: var(--forge-text);
+    font-family: var(--forge-font);
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    -webkit-font-smoothing: antialiased;
+    color-scheme: dark;
+}
+
+body.forge-ui {
+    padding: 24px 28px 48px;
+    min-height: 100vh;
+    box-sizing: border-box;
+}
+
+/* ---------------------------------------------------------------- header -- */
+.forge-header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--forge-border);
+}
+
+.forge-header-brand h1 {
+    margin: 0;
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--forge-text);
+}
+
+.forge-header-brand h1::before {
+    content: "";
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    margin-right: 10px;
+    background: var(--forge-accent);
+    border-radius: 2px;
+    vertical-align: middle;
+    transform: translateY(-2px);
+}
+
+.forge-subtitle {
+    display: block;
+    font-size: 13px;
+    color: var(--forge-text-mute);
+    margin-top: 2px;
+    font-family: var(--forge-mono);
+}
+
+.forge-header-meta {
+    display: flex;
+    gap: 8px;
+}
+
+.pill {
+    font-family: var(--forge-mono);
+    font-size: 11px;
+    padding: 4px 10px;
+    border: 1px solid var(--forge-border-2);
+    border-radius: 999px;
+    color: var(--forge-text-dim);
+    background: var(--forge-surface);
+    white-space: nowrap;
+}
+.pill.muted { color: var(--forge-text-mute); }
+
+/* ---------------------------------------------------------------- cards --- */
+.forge-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 20px;
+    max-width: 1400px;
+}
+
+.card {
+    background: var(--forge-surface);
+    border: 1px solid var(--forge-border);
+    border-radius: var(--forge-radius);
+    padding: 0;
+    box-shadow: var(--forge-shadow);
+    display: flex;
+    flex-direction: column;
+    transition: border-color 120ms ease, transform 120ms ease;
+}
+.card:hover { border-color: var(--forge-border-2); }
+
+.card header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 18px 12px;
+    border-bottom: 1px solid var(--forge-border);
+}
+
+.card h2 {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--forge-text-dim);
+}
+
+.card-body {
+    padding: 16px 18px;
+    flex: 1;
+}
+
+.card-footer {
+    padding: 10px 18px 14px;
+    border-top: 1px solid var(--forge-border);
+    font-size: 12px;
+    font-family: var(--forge-mono);
+}
+
+.deeplink {
+    color: var(--forge-text-dim);
+    text-decoration: none;
+    transition: color 100ms ease;
+}
+.deeplink:hover { color: var(--forge-accent); }
+
+.status-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--forge-text-mute);
+    box-shadow: 0 0 0 3px rgba(115,115,115,0.12);
+}
+.status-dot[data-status="ok"]    { background: var(--forge-ok);   box-shadow: 0 0 0 3px rgba(34,197,94,0.18);  }
+.status-dot[data-status="warn"]  { background: var(--forge-warn); box-shadow: 0 0 0 3px rgba(234,179,8,0.18);  }
+.status-dot[data-status="err"]   { background: var(--forge-err);  box-shadow: 0 0 0 3px rgba(239,68,68,0.18);  }
+.status-dot[data-status="idle"]  { background: var(--forge-text-mute); }
+
+/* ------------------------------------------------------------ metric rows - */
+.metric-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 6px 0;
+    font-size: 13px;
+    border-bottom: 1px dashed var(--forge-border);
+}
+.metric-row:last-child { border-bottom: none; }
+
+.metric-row .label {
+    color: var(--forge-text-mute);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+.metric-row .value {
+    font-family: var(--forge-mono);
+    color: var(--forge-text);
+    font-weight: 500;
+}
+
+.arc-row { margin-top: 8px; border-top: 1px solid var(--forge-border); padding-top: 10px; }
+
+/* -------------------------------------------------------- pool list ------- */
+.pool-row {
+    padding: 8px 0;
+    border-bottom: 1px dashed var(--forge-border);
+}
+.pool-row:last-child { border-bottom: none; }
+
+.pool-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+}
+.pool-name { font-family: var(--forge-mono); font-weight: 600; }
+.pool-health {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-family: var(--forge-mono);
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+.pool-health.health-ok   { color: var(--forge-ok);   background: rgba(34,197,94,0.12); }
+.pool-health.health-warn { color: var(--forge-warn); background: rgba(234,179,8,0.12); }
+.pool-health.health-err  { color: var(--forge-err);  background: rgba(239,68,68,0.12); }
+
+.pool-meta {
+    display: flex;
+    justify-content: space-between;
+    font-family: var(--forge-mono);
+    font-size: 11px;
+    color: var(--forge-text-dim);
+    margin-top: 2px;
+}
+.muted { color: var(--forge-text-mute); }
+
+.progress {
+    height: 4px;
+    background: var(--forge-surface-2);
+    border-radius: 2px;
+    margin-top: 6px;
+    overflow: hidden;
+}
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--forge-accent-dim), var(--forge-accent));
+    transition: width 400ms ease;
+}
+
+/* -------------------------------------------------------- timer table ---- */
+.timer-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+    font-family: var(--forge-mono);
+}
+.timer-table th {
+    text-align: left;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--forge-text-mute);
+    font-size: 10px;
+    padding: 4px 0;
+    border-bottom: 1px solid var(--forge-border);
+}
+.timer-table td {
+    padding: 6px 0;
+    border-bottom: 1px dashed var(--forge-border);
+    color: var(--forge-text);
+}
+.timer-table tr:last-child td { border-bottom: none; }
+
+/* -------------------------------------------------------- VM list -------- */
+.vm-list {
+    list-style: none;
+    margin: 10px 0 0;
+    padding: 0;
+    font-size: 13px;
+}
+.vm-list li {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 5px 0;
+    border-bottom: 1px dashed var(--forge-border);
+}
+.vm-list li:last-child { border-bottom: none; }
+.vm-list li.more a { color: var(--forge-text-dim); text-decoration: none; font-family: var(--forge-mono); font-size: 12px; }
+.vm-list li.more a:hover { color: var(--forge-accent); }
+
+.vm-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+.vm-dot.on  { background: var(--forge-ok);       box-shadow: 0 0 6px rgba(34,197,94,0.6); }
+.vm-dot.off { background: var(--forge-text-mute); }
+
+.vm-name   { font-family: var(--forge-mono); flex: 1; }
+.vm-state  { font-size: 11px; font-family: var(--forge-mono); }
+
+/* ---------------------------------------------------------- empty states - */
+.empty {
+    color: var(--forge-text-mute);
+    font-size: 12px;
+    font-style: italic;
+    padding: 8px 0;
+}
+.empty a { color: var(--forge-accent); text-decoration: none; }
+.empty a:hover { text-decoration: underline; }
+
+/* ---------------------------------------------------------- misc --------- */
+code {
+    font-family: var(--forge-mono);
+    background: var(--forge-surface-2);
+    padding: 1px 4px;
+    border-radius: 3px;
+    font-size: 90%;
+}
+
+/* narrow screens — stack instead of squishing */
+@media (max-width: 720px) {
+    body.forge-ui { padding: 16px; }
+    .forge-header { flex-direction: column; align-items: flex-start; }
+    .forge-grid { grid-template-columns: 1fr; }
+}

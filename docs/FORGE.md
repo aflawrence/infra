@@ -127,6 +127,30 @@ with pruning and verify. Here's how that maps:
 | Verify              | `zpool scrub` on the target; `restic check --read-data-subset` |
 | Web UI              | `cockpit-scheduler` shows all timers; `cockpit-zfs-manager` shows snapshots |
 
+## The dashboard (`forge-cockpit-ui`)
+
+A small RPM layers forge's identity on top of Cockpit without replacing
+anything:
+
+- **Branding** — `/usr/share/cockpit/branding/forge/` is picked up
+  automatically because `/etc/os-release` carries `ID=forge`. A
+  PatternFly-token override file restyles every module (dark palette,
+  orange accent, denser tables, forge fonts) and a login-page stylesheet
+  rebrands the sign-in screen.
+- **Overview module** — `/usr/share/cockpit/forge-overview/` adds a new
+  top sidebar entry that unifies cluster health, ZFS pool status + ARC
+  utilization, backup-timer freshness, and a short VM list onto one
+  screen. It deep-links into cockpit-machines, cockpit-zfs-manager, and
+  cockpit-scheduler for detail work.
+
+The module is vanilla JS — no bundler — and runs commands via
+`cockpit.spawn()` (`zpool list -Hp`, `virsh list`, `pcs status`,
+`systemctl list-timers --output=json`). It polls every 10 seconds and
+pauses automatically when the tab isn't visible. No backend daemon.
+
+Uninstall with `dnf remove forge-cockpit-ui` and Cockpit reverts to its
+stock appearance — nothing is patched in place.
+
 ## Non-goals
 
 - **Ceph**. If you want hyperconverged block storage, run Ceph separately

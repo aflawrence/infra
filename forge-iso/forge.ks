@@ -145,6 +145,9 @@ forge-release-common
 forge-logos
 forge-backgrounds
 
+# forge Cockpit UI — theme + overview landing page.
+forge-cockpit-ui
+
 # Remove things we don't want on a hypervisor
 -PackageKit-command-not-found
 %end
